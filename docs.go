@@ -1,20 +1,20 @@
 package main
 
 type Page struct {
-	Endpoint      string  `json:"endpoint"`
-	Requires_auth bool    `json:"requires_auth"`
-	Method        string  `json:"method"        default:"GET"`
-	Description   string  `json:"description"`
-	Params        []Param `json:"params"`
-	Headers       []Param `json:"headers"`
-	Body          []Param `json:"body"`
+	Endpoint      string  `json:"endpoint"` // url path of the endpoint
+	Requires_auth bool    `json:"requires_auth"` // whether the endpoint needs authentication
+	Method        string  `json:"method"        default:"GET"` // http method of endpoint
+	Description   string  `json:"description"` // brief description of the endpoint
+	Params        []Param `json:"params"` // an array of params in a URL. not to be confused with query params
+	Headers       []Param `json:"headers"` // array of headers accepted
+	Body          []Param `json:"body"` // array of parameters accepted in the request body
 }
 
 type Param struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Required    bool   `json:"required"    default:"false"`
-	Type        string `json:"type"        default:"string"`
+	Name        string `json:"name"` // name of parameter/header/form value
+	Description string `json:"description"` // description of parameter/header/form value
+	Required    bool   `json:"required"    default:"false"` // whether the parameter is required
+	Type        string `json:"type"        default:"string"` // type of parameter/header/form value
 }
 
 var pages = []Page{
