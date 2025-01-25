@@ -2,16 +2,20 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -53,9 +57,33 @@ func main() {
 	BASE_URL = os.Getenv("BASE_URL")
 	REGISTRATIONS_ENABLED, _ = strconv.ParseBool(os.Getenv("REGISTRATIONS_ENABLED"))
 
-	app := fiber.New()
 	startupTime := time.Now()
 
+	engine := html.New("./templates", ".html")
+	engine.Reload(true)
+
+	app := fiber.New(fiber.Config{Views: engine, ErrorHandler: func(c *fiber.Ctx, err error) error {
+		var code int
+		var message string
+
+		if err != nil {
+			var e *fiber.Error
+			if errors.As(err, &e) {
+				code = e.Code
+				message = http.StatusText(code)
+			}
+
+			if strings.HasPrefix(string(c.Request().URI().Path()), "/api") {
+				return c.Status(code).JSON(fiber.Map{"error": message})
+			}
+
+			return c.Status(code).Render("error", fiber.Map{"Status": code, "Message": message})
+		}
+
+		return nil
+	}})
+
+	app.Static("/static", "./static")
 	app.Use("/api/create", limiter.New(limiter.Config{Max: 5, Expiration: 1 * time.Minute}))
 	app.Use("/api/join", limiter.New(limiter.Config{Max: 1, Expiration: 5 * time.Minute}))
 	app.Use(logger.New(logger.Config{
@@ -66,7 +94,13 @@ func main() {
 
 	app.Get("/api", func(c *fiber.Ctx) error {
 		timeSinceStart := time.Now().Sub(startupTime)
-		return c.JSON(fiber.Map{"ok": "ok", "uptime": timeSinceStart.Seconds(), "info": "/info"})
+		return c.JSON(
+			fiber.Map{"ok": "ok", "uptime": timeSinceStart.Seconds(), "docs": "/api/docs"},
+		)
+	})
+
+	app.Get("/api/docs", func(c *fiber.Ctx) error {
+		return c.JSON(pages)
 	})
 
 	app.Post("/api/join", func(c *fiber.Ctx) error {
@@ -76,8 +110,9 @@ func main() {
 		}
 
 		username := c.FormValue("username", "")
-		if username == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad username"})
+		if !testMatch(username, GENERAL_REGEX) {
+			return c.Status(fiber.StatusBadRequest).
+				JSON(fiber.Map{"error": "username does not match the regex: " + GENERAL_REGEX})
 		}
 
 		result := users.FindOne(ctx, bson.M{"username": username})
@@ -259,6 +294,64 @@ func main() {
 			"short": BASE_URL + "/l/" + link.Short,
 			"hits":  link.Hits,
 		})
+	})
+
+	app.Get("/api/links/:username", func(c *fiber.Ctx) error {
+		lookupUser := c.Params("username")
+
+		token := c.Get("Authentication", "")
+		username := c.FormValue("username", "")
+
+		var user User
+		userLookup := users.FindOne(ctx, bson.M{"username": lookupUser})
+
+		if userLookup.Err() == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).
+				JSON(fiber.Map{"error": "user not found"})
+		}
+
+		userLookup.Decode(&user)
+
+		authenticated := false
+		if token != "" && username != "" && user.Username == username {
+			compare, _ := argon2id.ComparePasswordAndHash(token, user.Token)
+			if !compare {
+				return c.Status(fiber.StatusUnauthorized).
+					JSON(fiber.Map{"error": "incorrect token"})
+			}
+
+			authenticated = true
+		}
+
+		var linkList []interface{}
+		linkLookup, err := links.Find(ctx, bson.M{"user": user.ID})
+
+		if err != nil || (linkLookup.Err() != nil && linkLookup.Err() != mongo.ErrNoDocuments) {
+			return c.Status(fiber.StatusInternalServerError).
+				JSON(fiber.Map{"error": "an error occured when fetching links"})
+		}
+
+		for linkLookup.Next(ctx) {
+			var link Link
+			linkLookup.Decode(&link)
+
+			if !authenticated && link.Private {
+				continue
+			}
+
+			linkList = append(linkList, fiber.Map{
+				"name":  link.Short,
+				"long":  link.Link,
+				"short": BASE_URL + "/l/" + link.Short,
+				"hits":  link.Hits,
+			})
+		}
+
+		if len(linkList) == 0 {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no links found"})
+		}
+
+		return c.JSON(linkList)
 	})
 
 	connect()
