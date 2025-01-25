@@ -36,6 +36,10 @@ BASE_URL="base URL of the server"
 REGISTRATIONS_ENABLED="true or false"
 ```
 
+## API Documentation
+
+Please see [docs.md](docs.md) for more information.
+
 ## License
 
 MIT License (see LICENSE.md)
