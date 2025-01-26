@@ -103,6 +103,10 @@ func main() {
 		return c.JSON(pages)
 	})
 
+	app.Get("/docs", func(c *fiber.Ctx) error {
+		return c.Redirect("https://github.com/radeeyate/goto/blob/main/docs.md")
+	})
+
 	app.Post("/api/join", func(c *fiber.Ctx) error {
 		if !REGISTRATIONS_ENABLED {
 			return c.Status(fiber.StatusForbidden).
@@ -252,6 +256,10 @@ func main() {
 
 		result.Decode(&link)
 
+		var creator User
+		result = users.FindOne(ctx, bson.M{"_id": link.User})
+		result.Decode(&creator)
+
 		if link.Private {
 			if token == "" || username == "" {
 				return c.Status(fiber.StatusUnauthorized).
@@ -285,6 +293,7 @@ func main() {
 				"short":   BASE_URL + "/l/" + link.Short,
 				"hits":    link.Hits,
 				"private": true,
+				"creator": creator.Username,
 			})
 		}
 
@@ -293,6 +302,7 @@ func main() {
 			"long":  link.Link,
 			"short": BASE_URL + "/l/" + link.Short,
 			"hits":  link.Hits,
+			"creator": creator.Username,
 		})
 	})
 
@@ -344,6 +354,7 @@ func main() {
 				"long":  link.Link,
 				"short": BASE_URL + "/l/" + link.Short,
 				"hits":  link.Hits,
+				"creator": lookupUser,
 			})
 		}
 
