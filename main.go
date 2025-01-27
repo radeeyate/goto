@@ -33,6 +33,7 @@ var links *mongo.Collection
 var CONNECTION_STRING string
 var REGISTRATIONS_ENABLED bool
 var BASE_URL string
+var PORT string
 
 var GENERAL_REGEX = `^[a-zA-Z0-9_-]{3,15}$`
 
@@ -56,6 +57,7 @@ func main() {
 	CONNECTION_STRING = os.Getenv("CONNECTION_STRING")
 	BASE_URL = os.Getenv("BASE_URL")
 	REGISTRATIONS_ENABLED, _ = strconv.ParseBool(os.Getenv("REGISTRATIONS_ENABLED"))
+	PORT = os.Getenv("PORT")
 
 	startupTime := time.Now()
 
@@ -370,7 +372,7 @@ func main() {
 	})
 
 	connect()
-	app.Listen(":3000")
+	app.Listen(":" + PORT)
 }
 
 func connect() {

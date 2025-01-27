@@ -34,6 +34,7 @@ Keep in mind that to run the server, you must set up an environment variable (`.
 CONNECTION_STRING="mongodb link of database"
 BASE_URL="base URL of the server"
 REGISTRATIONS_ENABLED="true or false"
+PORT=port of the server (e.g. 3000 or 8080)
 ```
 
 ## API Documentation
