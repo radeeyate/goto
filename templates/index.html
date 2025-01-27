@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>goto - URL Shortener</title>
+    <link rel="stylesheet" href="/static/bulma.css">
+    <style>
+        .container {
+            padding-top: 20px;
+        }
+
+        .shortened-link,
+        .lookup-link-info {
+            margin-top: 15px;
+            font-size: 1.2em;
+        }
+
+        .message-area {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="hero is-primary">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    goto - url shortener
+                </h1>
+                <p class="subtitle">
+                    shorten your links with ease.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div id="registration-section">
+                <h2 class="subtitle">register</h2>
+                <form id="registration-form">
+                    <div class="field">
+                        <label class="label" for="reg-username">username</label>
+                        <div class="control">
+                            <input class="input" type="text" id="reg-username" name="username" required
+                                placeholder="choose a username (alphanumeric, 3-15 chars)">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-primary" type="submit">register</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="registration-message" class="message-area"></div>
+            </div>
+
+            <hr>
+
+            <div id="shorten-section">
+                <h2 class="subtitle">shorten a link</h2>
+                <form id="shorten-form">
+                    <div class="field">
+                        <label class="label" for="long-url">long url</label>
+                        <div class="control">
+                            <input class="input" type="url" id="long-url" name="link" required
+                                placeholder="enter the url to shorten">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="short-name">custom short name (optional)</label>
+                        <div class="control">
+                            <input class="input" type="text" id="short-name" name="name"
+                                placeholder="choose a short name (alphanumeric, 3-15 chars)">
+                        </div>
+                        <p class="help">leave blank for a randomly generated name</p>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" id="private-link" name="private">
+                                private link (only you can view stats)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="username">username</label>
+                        <div class="control">
+                            <input class="input" type="text" id="username" name="username" required
+                                placeholder="your username">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="token">access token</label>
+                        <div class="control">
+                            <input class="input" type="text" id="token" name="token" required
+                                placeholder="your access token (after registration)">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-primary" type="submit">shorten url</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="shorten-message" class="message-area"></div>
+                <div id="shortened-link-display" class="shortened-link" style="display: none;">
+                    <strong>shortened link:</strong> <a href="#" id="shortened-url-link" target="_blank"></a>
+                </div>
+            </div>
+
+            <hr>
+
+            <div id="lookup-section">
+                <h2 class="subtitle">lookup link information</h2>
+                <form id="lookup-form">
+                    <div class="field">
+                        <label class="label" for="lookup-name">short link name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="lookup-name" name="name" required
+                                placeholder="enter the short name to lookup">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-primary" type="submit">lookup link</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="lookup-message" class="message-area"></div>
+                <div id="lookup-link-info-display" class="lookup-link-info" style="display: none;">
+                    <p><strong>short Name:</strong> <span id="lookup-short-name"></span></p>
+                    <p><strong>long url:</strong> <a href="#" id="lookup-long-url" target="_blank"></a></p>
+                    <p><strong>short url:</strong> <a href="#" id="lookup-short-url" target="_blank"></a></p>
+                    <p><strong>hits:</strong> <span id="lookup-hits"></span></p>
+                    <p><strong>privacy:</strong> <span id="lookup-privacy"></span></p>
+                    <p><strong>creator:</strong> <span id="lookup-creator"></span></p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                made with love by <a href="https://github.com/radeeyate">andrew</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const registrationForm = document.getElementById('registration-form');
+        const shortenForm = document.getElementById('shorten-form');
+        const lookupForm = document.getElementById('lookup-form');
+        const registrationMessageArea = document.getElementById('registration-message');
+        const shortenMessageArea = document.getElementById('shorten-message');
+        const shortenedLinkDisplay = document.getElementById('shortened-link-display');
+        const shortenedUrlLink = document.getElementById('shortened-url-link');
+        const lookupMessageArea = document.getElementById('lookup-message');
+        const lookupLinkInfoDisplay = document.getElementById('lookup-link-info-display');
+        const lookupShortName = document.getElementById('lookup-short-name');
+        const lookupLongUrl = document.getElementById('lookup-long-url');
+        const lookupShortUrl = document.getElementById('lookup-short-url');
+        const lookupHits = document.getElementById('lookup-hits');
+        const lookupPrivacy = document.getElementById('lookup-privacy');
+        const lookupCreator = document.getElementById('lookup-creator');
+
+
+        registrationForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            registrationMessageArea.innerHTML = '';
+
+            const formData = new FormData(registrationForm);
+            const username = formData.get('username');
+
+            try {
+                const response = await fetch('/api/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${username}`
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    registrationMessageArea.innerHTML = `<div class="message is-success"><div class="message-body">${data.ok} <br> <strong>token:</strong> ${data.token} <br> <strong>please save this token!</strong></div></div>`;
+                } else {
+                    registrationMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">error: ${data.error}</div></div>`;
+                }
+            } catch (error) {
+                registrationMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">an unexpected error occurred.</div></div>`;
+                console.error("registration error:", error);
+            }
+        });
+
+
+        shortenForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            shortenMessageArea.innerHTML = '';
+            shortenedLinkDisplay.style.display = 'none';
+
+            const formData = new FormData(shortenForm);
+            const longUrl = formData.get('link');
+            const shortName = formData.get('name');
+            const privateLink = formData.get('private');
+            const username = formData.get('username');
+            const token = formData.get('token');
+
+            let requestBody = `link=${encodeURIComponent(longUrl)}`;
+            if (shortName) {
+                requestBody += `&name=${encodeURIComponent(shortName)}`;
+            }
+            if (privateLink) {
+                requestBody += `&private=true`;
+            }
+            requestBody += `&username=${encodeURIComponent(username)}`;
+
+
+            try {
+                const response = await fetch('/api/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authentication': token,
+                    },
+                    body: requestBody,
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    shortenMessageArea.innerHTML = `<div class="message is-success"><div class="message-body">${data.ok}</div></div>`;
+                    shortenedUrlLink.href = data.link;
+                    shortenedUrlLink.textContent = data.link;
+                    shortenedLinkDisplay.style.display = 'block';
+                } else {
+                    shortenMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">error: ${data.error}</div></div>`;
+                }
+            } catch (error) {
+                shortenMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">an unexpected error occurred.</div></div>`;
+                console.error("shorten error:", error);
+            }
+        });
+
+        lookupForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            lookupMessageArea.innerHTML = '';
+            lookupLinkInfoDisplay.style.display = 'none';
+
+            const formData = new FormData(lookupForm);
+            const linkName = formData.get('name');
+            const username = formData.get('username');
+            const token = formData.get('token');
+
+            let apiUrl = `/api/link/${encodeURIComponent(linkName)}`;
+            let headers = {};
+            let requestBody = null;
+
+            if (username && token) {
+                headers['Authentication'] = token;
+                requestBody = `username=${encodeURIComponent(username)}`;
+            } else if (username || token) {
+                lookupMessageArea.innerHTML = `<div class="message is-warning"><div class="message-body">for private links, please provide both username and token.</div></div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: headers,
+                    body: requestBody ? requestBody : null,
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    lookupMessageArea.innerHTML = `<div class="message is-success"><div class="message-body">link information found!</div></div>`;
+                    lookupShortName.textContent = data.name;
+                    lookupLongUrl.href = data.long;
+                    lookupLongUrl.textContent = data.long;
+                    lookupShortUrl.href = data.short;
+                    lookupShortUrl.textContent = data.short;
+                    lookupHits.textContent = data.hits;
+                    lookupPrivacy.textContent = data.private ? 'private' : 'public';
+                    lookupCreator.textContent = data.creator;
+                    lookupLinkInfoDisplay.style.display = 'block';
+
+                } else {
+                    lookupMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">error: ${data.error}</div></div>`;
+                }
+            } catch (error) {
+                lookupMessageArea.innerHTML = `<div class="message is-danger"><div class="message-body">an unexpected error occurred during lookup.</div></div>`;
+                console.error("lookup error:", error);
+            }
+        });
+    </script>
+</body>
+
+</html>

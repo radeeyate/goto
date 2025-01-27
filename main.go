@@ -103,6 +103,10 @@ func main() {
 		return c.JSON(pages)
 	})
 
+	app.Get("/", func (c *fiber.Ctx) error {
+		return c.Render("index", fiber.Map{})
+	})
+
 	app.Get("/docs", func(c *fiber.Ctx) error {
 		return c.Redirect("https://github.com/radeeyate/goto/blob/main/docs.md")
 	})
